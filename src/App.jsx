@@ -114,7 +114,7 @@ function App() {
 
   return (
     <>
-      <Box sx={{ backgroundColor: '#FF5722', color: '#fff' }}>
+      <Box sx={{ backgroundColor: '#FF5722', color: '#fff', boxShadow: '0 0 10px #686868' }}>
         <Box sx={{ maxWidth: '1600px', mx: 'auto', px: 2, py: 2, display: 'flex', gap: 2 }}>
           <Button component={NavLink} to="/" color="inherit">Головна</Button>
           <Button component={NavLink} to="/cart" color="inherit">

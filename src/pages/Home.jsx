@@ -30,8 +30,9 @@ const Home = ({ onAddProduct, cartItems }) => {
 
   return (
     <>
-    <h1>Головна</h1>
-      <input
+      <h1>Головна</h1>
+      <input className="input-search"
+        name="search"
         ref={inputRef}
         type="text"
         placeholder="Пошук товару..."

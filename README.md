@@ -1,16 +1,244 @@
-# React + Vite
+# React Optimization
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Документ детально описує архітектуру, логіку та потік даних React-застосунку:
+- звідки приходять дані
+- де вони зберігаються
+- які пропси і функції передаються
+- які React-хуки використовуються
+- як відбувається ререндер і оптимізація
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 1. Точка входу застосунку — `main.jsx`
 
-## React Compiler
+### Призначення
+Файл є точкою старту React-застосунку.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Логіка
+- Монтує React у DOM (`#root`)
+- Підключає клієнтську маршрутизацію
 
-## Expanding the ESLint configuration
+### Використані бібліотеки
+- `react-dom/client`
+- `react-router-dom`
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Використані компоненти
+- `<BrowserRouter>`
+- `<App />`
+
+### Потік запуску
+```
+index.html
+  ↓
+main.jsx
+  ↓
+BrowserRouter
+  ↓
+App
+```
+
+---
+
+## 2. Головний компонент — `App.jsx`
+
+### Призначення
+Центральний компонент застосунку. Керує глобальним станом корзини.
+
+### Стан (State)
+```js
+{
+  items: []
+}
+```
+
+### Використані хуки
+- `useReducer` — управління корзиною
+- `useEffect` — синхронізація з localStorage
+- `useCallback` — стабільні handler-функції
+
+### Reducer
+Керує всіма діями з корзиною:
+- додавання
+- видалення
+- зміна кількості
+- очищення
+
+### Handler-функції
+- `handleAddToCart(product)`
+- `handleRemoveItem(id)`
+- `handleIncrease(id)`
+- `handleDecrease(id)`
+- `handleClearCart()`
+
+Всі функції викликають `dispatch`.
+
+### localStorage
+- Ініціалізація стану з `localStorage`
+- Автоматичне збереження при кожній зміні `items`
+
+---
+
+## 3. Маршрутизація
+
+### Налаштування
+Використовується `react-router-dom`.
+
+### Маршрути
+| Шлях | Компонент |
+|----|---------|
+| `/` | Home |
+| `/cart` | Cart |
+
+### Навігація
+- `NavLink` — меню
+- `useNavigate` — програмна навігація
+
+---
+
+## 4. Home.jsx — сторінка каталогу
+
+### Призначення
+Відображає список товарів та дозволяє додавати їх у корзину.
+
+### Пропси
+- `onAddProduct(product)` — додає товар у корзину
+- `cartItems` — поточний стан корзини
+
+### Локальний стан
+- `products` — список товарів з API
+- `search` — рядок пошуку
+
+### Використані хуки
+- `useState` — локальний стан
+- `useEffect` — fetch товарів
+- `useMemo` — фільтрація товарів
+- `useRef` — ref для input
+
+### Основні функції
+- `getCartQuantity(productId)` — визначає кількість товару в корзині
+
+---
+
+## 5. Product_Component.jsx — карточка товару
+
+### Призначення
+Окрема карточка одного товару.
+
+### Пропси
+- `product` — дані товару
+- `onClick(product)` — додавання в корзину
+- `cartQuantity` — кількість у корзині
+
+### Локальний стан
+- `quantity` — кількість для додавання
+
+### Використані хуки
+- `useState`
+- `useEffect` — синхронізація з корзиною
+- `useNavigate` — перехід в `/cart`
+- `memo` — оптимізація ререндеру
+
+### Логіка UI
+- Якщо товар в корзині — кнопка переходу
+- Якщо ні — кнопка додавання
+
+---
+
+## 6. Cart.jsx — сторінка корзини
+
+### Призначення
+Відображає корзину та фінальні підрахунки.
+
+### Пропси
+- `items`
+- `onRemoveItem`
+- `onIncrease`
+- `onDecrease`
+- `onClearCart`
+
+### Локальний стан
+- `showSuccess` — статус покупки
+
+### Використані хуки
+- `useState`
+- `useMemo` — підрахунок суми та кількості
+
+### Основні функції
+- `handleClearWithSuccess()` — завершення покупки
+
+---
+
+## 7. Cart_Component.jsx — елемент корзини
+
+### Призначення
+Відображає один товар у корзині.
+
+### Пропси
+- `item`
+- `index`
+- `onRemove(id)`
+- `onIncrease(id)`
+- `onDecrease(id)`
+
+### Використані хуки
+- `memo` — оптимізація
+
+### Логіка
+- Кнопки + / -
+- Видалення товару
+- Обмеження quantity ≥ 1
+
+---
+
+## 8. Оптимізація продуктивності
+
+### Використано
+- `memo` — запобігання зайвим ререндерам
+- `useCallback` — стабільні посилання на функції
+- `useMemo` — кешування обчислень
+
+---
+
+## 9. Потік даних (Data Flow)
+
+```
+API
+ ↓
+Home
+ ↓ props
+Product_Component
+ ↓ callback
+App (reducer)
+ ↓ state
+Cart
+ ↓
+localStorage
+```
+
+---
+
+## 10. Повний список хуків
+
+- useState
+- useEffect
+- useReducer
+- useCallback
+- useMemo
+- useRef
+- memo
+- useNavigate
+
+---
+
+## 11. Висновок
+
+Застосунок побудований за принципами:
+- єдине джерело істини (App)
+- однонапрямлений потік даних
+- оптимізовані ререндери
+- розділення відповідальностей компонентів
+
+Документ можна використовувати як:
+- README
+- технічну документацію
+- пояснення архітектури на співбесіді
